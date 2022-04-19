@@ -1,0 +1,1 @@
+/home/aditya/learning_rust/text_editor/target/debug/text_editor: /home/aditya/learning_rust/text_editor/src/document.rs /home/aditya/learning_rust/text_editor/src/editor.rs /home/aditya/learning_rust/text_editor/src/main.rs /home/aditya/learning_rust/text_editor/src/row.rs /home/aditya/learning_rust/text_editor/src/terminal.rs
