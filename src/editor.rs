@@ -228,7 +228,11 @@ impl Editor {
 
     //Scroll
     //this function helps determine which lines of the document to display... as the terminal has a fixed height, as soon as the document has more lines
-    //then the terminal can display, a scrolling function is necessary
+    //then the terminal can display, a scrolling function is necessary... the way the scroll function works is by checking the document length (number of rows)
+    //vs the height of the terminal. It also checks the length of the row vs the width of the terminal... if the entire document or the entire row cannot fit
+    //on the terminal, an "offset" is calculated based on the cursor position... if the cursor is moved passed the boundry of the terminal, the offset is update 
+    //and the rows rendered on the terminal changed (as we moved the cursor down, the terminal appears to scroll - this is caused by the fact that the rows being renderd
+    //change)  
     fn scroll(&mut self) {
         let Position { x, y} = self.cursor_position;
         let width = self.terminal.size().width as usize;
