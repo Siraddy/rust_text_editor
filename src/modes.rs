@@ -6,9 +6,15 @@ use termion::event::Key;
 //this struct stores the current operating mode of the text editor (read, edit, write, quit) as well as the key mappings for special instructions.
 //by default the key mappings are the ones in the main editor.rs function "process key" and "move cursor"... those will be moved into this file eventually
 //and will be able to be user configurable
+//
+//the various editor modes are:
+//0 - read
+//1 - edit
+//2 - write
+//3 - quit
 pub struct Modes {
     editor_mode     : u32,
-    editor_key_maps : HashMap<String, Key>,
+    editor_key_maps : HashMap<Key, String>,
 }
 
 impl Modes {
@@ -17,27 +23,27 @@ impl Modes {
     pub fn default() -> Self {
         
         /*Initialize an initial key map to assign to our editor key maps */
-        let mut initial_key_map : HashMap<String, Key> = HashMap::new();
+        let mut initial_key_map : HashMap<Key, String> = HashMap::new();
 
         /*Inserting the editor mode key mappings  */
-        initial_key_map.insert("Edit".to_string(), Key::Ctrl('e'));
-        initial_key_map.insert("Read".to_string(), Key::Ctrl('r'));
-        initial_key_map.insert("Write".to_string(), Key::Ctrl('w'));
-        initial_key_map.insert("Quit".to_string(), Key::Ctrl('q'));
+        initial_key_map.insert(Key::Ctrl('e'), "Edit".to_string());
+        initial_key_map.insert(Key::Ctrl('r'), "Read".to_string());
+        initial_key_map.insert(Key::Ctrl('w'), "Write".to_string());
+        initial_key_map.insert(Key::Ctrl('q'), "Quit".to_string());
 
         /*Inserting the editor in-line cursor movement key mappings */
-        initial_key_map.insert("Move-Left".to_string(), Key::Alt('j'));
-        initial_key_map.insert("Move-Right".to_string(), Key::Alt('k'));
-        initial_key_map.insert("Head-Line".to_string(), Key::Alt('h'));
-        initial_key_map.insert("Tail-Line".to_string(), Key::Alt('l'));
+        initial_key_map.insert(Key::Alt('j'), "Move-Left".to_string());
+        initial_key_map.insert(Key::Alt('k'), "Move-Right".to_string());
+        initial_key_map.insert(Key::Alt('h'), "Head-Line".to_string());
+        initial_key_map.insert(Key::Alt('l'), "Tail-Line".to_string());
 
         /*Inserting the editor document traversal cursor movement key mappings */
-        initial_key_map.insert("Move-Down".to_string(), Key::Alt('d'));
-        initial_key_map.insert("Move-Forward".to_string(), Key::Alt('f'));
+        initial_key_map.insert(Key::Alt('d'), "Move-Down".to_string());
+        initial_key_map.insert(Key::Alt('f'), "Move-Forward".to_string());
 
         /*Inserting the editor document page cursor movement key mappings */
-        initial_key_map.insert("Page-Up".to_string(), Key::Alt('v'));
-        initial_key_map.insert("Page-Down".to_string(), Key::Alt('n'));
+        initial_key_map.insert(Key::Alt('v'), "Page-Up".to_string());
+        initial_key_map.insert(Key::Alt('n'), "Page-Down".to_string());
 
         return Modes {
             editor_mode     : 0,
