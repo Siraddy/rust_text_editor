@@ -51,5 +51,25 @@ impl Modes {
         }
     }
 
+    //Get Editor Mode
+    //this function returns the current editor mode (currently it will return 0, 1, 2, 3), this can be updated in the future
+    pub fn get_editor_mode(&self) -> u32 {
+        return self.editor_mode;
+    }
+
+    //Check Key-Maps Key
+    //this function returns true or false based on whether a key is present in the hash map or not
+    pub fn check_key_in_map(&self, key : &Key) -> bool {
+        return self.editor_key_maps.contains_key(key);
+    }
+
+    //Get Value From HashMap
+    //this function return the value stored against a particular key in the hashmap
+    pub fn get_value_from_map(&self, key : &Key) -> Option<&String> {
+        return self.editor_key_maps.get(key);
+    }
+
+    
+
 
 }
