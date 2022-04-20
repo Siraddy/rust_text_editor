@@ -2,12 +2,14 @@ mod row;
 mod document;
 mod editor;
 mod terminal;
+mod modes;
 
 pub use document::Document;
 use editor::Editor;
 pub use editor::Position;
 pub use row::Row;
 pub use terminal::Terminal;
+use modes::Modes;
 
 
 // fn cntrl_character(c : char) -> u8 {
