@@ -66,10 +66,15 @@ impl Modes {
     //Get Value From HashMap
     //this function return the value stored against a particular key in the hashmap
     pub fn get_value_from_map(&self, key : &Key) -> Option<&String> {
-        return self.editor_key_maps.get(key);
+        if self.check_key_in_map(key) == true {
+            return self.editor_key_maps.get(key);
+        } else {
+            return None;
+        }
+        
     }
 
-    
+
 
 
 }
