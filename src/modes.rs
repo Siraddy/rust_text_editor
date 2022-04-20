@@ -76,15 +76,15 @@ impl Modes {
         
     }
 
-    //Set Editor Mode
+    //Set Editor Mode and Cursor Mode
     //this function takes in a keyboard command (for now either - Ctrl-e, Ctrl-r, Ctrl-w, Ctrl-q) and sets the editor mode variable to match
     //first we have to accept keyboard input, check it against the dictionary values, if value matches the editor mode settings, then reset the 
     //editor mode, else do nothing
-
-    pub fn process_hashmap_key_press(&mut self, key : Key) {
+    pub fn process_hashmap_key_press(&mut self, key : Key) -> bool {
         let result = self.get_value_from_map(&key);
-        let mut mode    : u32 = self.editor_mode;
-        let mut cursor  : u32 = self.cursor_mode;
+        let mut mode     : u32 = self.editor_mode;
+        let mut cursor   : u32 = self.cursor_mode;
+        let mut no_match : bool = false;
 
         match result {
             Some(res) => {
@@ -93,7 +93,10 @@ impl Modes {
                     "Edit"  => mode = 1,
                     "Write" => mode = 2,
                     "Quit"  => mode = 3,
+                    _       => no_match = true,
+                }
 
+                match res.as_ref() {
                     "Move-Left"  => cursor = 0,
                     "Move-Right" => cursor = 1,
                     "Head-Line"  => cursor = 2,
@@ -105,18 +108,16 @@ impl Modes {
                     "Page-Up"   => cursor = 6,
                     "Page-Down" => cursor = 7,
                     
-                    _ => return,
+                    _ => no_match = if no_match == true { true } else { false },
                 }
             }
 
-            None => return,
+            None => return false,
         }
 
         self.editor_mode = mode;
         self.cursor_mode = cursor;
+        return no_match;
     }
-
-
-
 
 }
