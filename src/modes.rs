@@ -1,6 +1,6 @@
 //comment for first github commit
 use std::collections::HashMap;
-use termion::event::Key;
+use termion::{event::Key, cursor};
 
 //Mode Struct
 //this struct stores the current operating mode of the text editor (read, edit, write, quit) as well as the key mappings for special instructions.
@@ -14,6 +14,7 @@ use termion::event::Key;
 //3 - quit
 pub struct Modes {
     editor_mode     : u32,
+    cursor_mode     : u32,
     editor_key_maps : HashMap<Key, String>,
 }
 
@@ -47,6 +48,7 @@ impl Modes {
 
         return Modes {
             editor_mode     : 0,
+            cursor_mode     : 0,
             editor_key_maps : initial_key_map,
         }
     }
@@ -72,6 +74,46 @@ impl Modes {
             return None;
         }
         
+    }
+
+    //Set Editor Mode
+    //this function takes in a keyboard command (for now either - Ctrl-e, Ctrl-r, Ctrl-w, Ctrl-q) and sets the editor mode variable to match
+    //first we have to accept keyboard input, check it against the dictionary values, if value matches the editor mode settings, then reset the 
+    //editor mode, else do nothing
+
+    pub fn process_hashmap_key_press(&mut self, key : Key) {
+        let result = self.get_value_from_map(&key);
+        let mut mode    : u32 = self.editor_mode;
+        let mut cursor  : u32 = self.cursor_mode;
+
+        match result {
+            Some(res) => {
+                match res.as_ref() {
+                    "Read"  => mode = 0,
+                    "Edit"  => mode = 1,
+                    "Write" => mode = 2,
+                    "Quit"  => mode = 3,
+
+                    "Move-Left"  => cursor = 0,
+                    "Move-Right" => cursor = 1,
+                    "Head-Line"  => cursor = 2,
+                    "Tail-Line"  => cursor = 3,
+
+                    "Move-Down"     => cursor = 4,
+                    "Move-Forward"  => cursor = 5,
+                    
+                    "Page-Up"   => cursor = 6,
+                    "Page-Down" => cursor = 7,
+                    
+                    _ => return,
+                }
+            }
+
+            None => return,
+        }
+
+        self.editor_mode = mode;
+        self.cursor_mode = cursor;
     }
 
 
