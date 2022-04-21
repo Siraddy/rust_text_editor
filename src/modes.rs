@@ -8,13 +8,12 @@ use termion::{event::Key, cursor};
 //and will be able to be user configurable
 //
 //the various editor modes are:
-//0 - read
-//1 - edit
-//2 - write
-//3 - quit
+//0 - read, 1 - edit, 2 - write, 3 - quit
+//
+//cursor mode on the other hand also stores integers
 pub struct Modes {
-    editor_mode     : u32,
-    cursor_mode     : u32,
+    editor_mode     : (String, bool),
+    cursor_mode     : (String, bool),
     editor_key_maps : HashMap<Key, String>,
 }
 
@@ -47,17 +46,14 @@ impl Modes {
         initial_key_map.insert(Key::Alt('n'), "Page-Down".to_string());
 
         return Modes {
-            editor_mode     : 0,
-            cursor_mode     : 0,
+            editor_mode     : ("Read".to_string(), false),
+            cursor_mode     : ("".to_string(), false),
             editor_key_maps : initial_key_map,
         }
     }
 
     //Get Editor Mode
     //this function returns the current editor mode (currently it will return 0, 1, 2, 3), this can be updated in the future
-    pub fn get_editor_mode(&self) -> u32 {
-        return self.editor_mode;
-    }
 
     //Check Key-Maps Key
     //this function returns true or false based on whether a key is present in the hash map or not
@@ -76,48 +72,64 @@ impl Modes {
         
     }
 
+    pub fn get_editor_mode(&self) -> (&String, bool) {
+        let mode : &String = &self.editor_mode.0;
+        let flag : bool = self.editor_mode.1;
+        return (mode, flag);
+    }
+
+    pub fn get_cursor_mode(&self) -> (&String, bool) {
+        let mode : &String = &self.cursor_mode.0;
+        let flag : bool = self.cursor_mode.1;
+        return (mode, flag);
+    }
+
+    pub fn set_editor_mode(&mut self, mode : &String, flag : bool) {
+        self.editor_mode.0 = mode.to_string();
+        self.editor_mode.1 = flag;
+    }
+
+    pub fn set_cursor_mode(&mut self, mode : &String, flag : bool) {
+        self.cursor_mode.0 = mode.to_string();
+        self.cursor_mode.1 = flag;
+    }
+
     //Set Editor Mode and Cursor Mode
     //this function takes in a keyboard command (for now either - Ctrl-e, Ctrl-r, Ctrl-w, Ctrl-q) and sets the editor mode variable to match
     //first we have to accept keyboard input, check it against the dictionary values, if value matches the editor mode settings, then reset the 
     //editor mode, else do nothing
-    pub fn process_hashmap_key_press(&mut self, key : Key) -> bool {
-        let result = self.get_value_from_map(&key);
-        let mut mode     : u32 = self.editor_mode;
-        let mut cursor   : u32 = self.cursor_mode;
-        let mut no_match : bool = false;
+    pub fn process_hashmap_key_press(&mut self, key : &Key) {
+        let result: Option<String> = self.get_value_from_map(&key).cloned();
 
         match result {
             Some(res) => {
-                match res.as_ref() {
-                    "Read"  => mode = 0,
-                    "Edit"  => mode = 1,
-                    "Write" => mode = 2,
-                    "Quit"  => mode = 3,
-                    _       => no_match = true,
-                }
+                match res.as_str() {
+                    "Edit" | "Read" | "Write" | "Quit" => {
+                        self.set_editor_mode(&res, true);
+                        self.set_cursor_mode(&"None".to_string(), false);
 
-                match res.as_ref() {
-                    "Move-Left"  => cursor = 0,
-                    "Move-Right" => cursor = 1,
-                    "Head-Line"  => cursor = 2,
-                    "Tail-Line"  => cursor = 3,
+                        return;
+                    }
 
-                    "Move-Down"     => cursor = 4,
-                    "Move-Forward"  => cursor = 5,
-                    
-                    "Page-Up"   => cursor = 6,
-                    "Page-Down" => cursor = 7,
-                    
-                    _ => no_match = if no_match == true { true } else { false },
+                    "Move-Left" |"Move-Right" | "Head-Line" | "Tail-Line" | "Move-Down" | "Move-Forward" | "Page-Up" | "Page-Down" => {
+                        self.set_cursor_mode(&res, true);
+                        self.set_editor_mode(&"None".to_string(), false);
+
+                        return;
+                    }
+
+                    _ => {
+                        ();
+                        return;
+                    }
                 }
             }
 
-            None => return false,
+            None => {
+                ();
+                return;
+            }
         }
-
-        self.editor_mode = mode;
-        self.cursor_mode = cursor;
-        return no_match;
     }
 
 }
