@@ -1,6 +1,8 @@
 use crate::Document;
 use crate::Row;
 use crate::Terminal;
+use crate::Modes;
+
 use termion::event::Key;
 use std::env;
 use termion::color;
@@ -40,6 +42,9 @@ pub struct Editor {
     status_message  : Status_Message,  
     document        : Document,
     quit_times      : u8,
+    modes           : Modes,
+    should_edit     : bool,
+
 }
 
 impl Editor {
@@ -73,6 +78,8 @@ impl Editor {
             status_message  : Status_Message::create(initial_status),
             document,
             quit_times      : QUIT_TIMES,
+            modes           : Modes::default(),
+            should_edit     : false,
          };
     }
 
@@ -271,56 +278,77 @@ impl Editor {
         }
     }
 
-    //------------------------------------------------------------------------//
-    //-------------- Detect And Process Key Pressed --------------------------//
-    //------------------------------------------------------------------------//
-    fn process_keypress(&mut self) -> Result<(), std::io::Error> {
-        let pressed_key = Terminal::read_key()?;
-        match pressed_key {
-            Key::Char(c) => {
-                self.document.insert(&self.cursor_position, c);
-                self.move_cursor(Key::Alt('k'));
-            }
-            Key::Backspace => {
-                if self.cursor_position.y > 0 || self.cursor_position.x > 0 {
-                    self.move_cursor(Key::Alt('j'));
-                    self.document.delete(&self.cursor_position);
-                }
-            }
-            Key::Delete => {
-                if self.cursor_position.x > 0 || self.cursor_position.y >= 0 {
-                    self.document.delete(&self.cursor_position);
-                }
-            }
-            Key::Alt('q') => {
-                if self.quit_times > 0 && self.document.is_dirty() == true {
-                    self.status_message = Status_Message::create(format!("WARNING! File has unsaved changes. Press Alt-Q {} more times to quit.", self.quit_times));
-                    self.quit_times = self.quit_times - 1;
-                    return Ok(());
-                }
-
-                self.should_quit = true;
-            }
-            Key::Ctrl('w') => {
-                self.save();
-            }
-            Key::Alt('f') 
-            | Key::Alt('d') 
-            | Key::Alt('j') 
-            | Key::Alt('k') 
-            | Key::Alt('h')
-            | Key::Alt('l')
-            | Key::Alt('v')
-            | Key::Alt('n') => self.move_cursor(pressed_key),
-            _ => (),
+    //Quit
+    //moves the quit logic out of the process keypress function and into its own function. This way we can edit the process keypress (move the quit handling into modes)
+    //while retaining the quit logic... this will let us perform the quit-times handling without large, clunky code in an if statement
+    fn quit(&mut self) {
+        if self.quit_times > 0 && self.document.is_dirty() == true {
+            self.status_message = Status_Message::create(format!("WARNING! File has unsaved changes. Press Alt-Q {} more times to quit.", self.quit_times));
+            self.quit_times = self.quit_times - 1;
+            return;
         }
 
-        self.scroll();
+        self.should_quit = true;
+        return;
+    }
 
+    fn reset_quit(&mut self) {
         if self.quit_times < QUIT_TIMES {
             self.quit_times = QUIT_TIMES;
             self.status_message = Status_Message::create(String::new());
         }
+
+        return;
+    }
+
+    //------------------------------------------------------------------------//
+    //-------------- Detect And Process Key Pressed --------------------------//
+    //------------------------------------------------------------------------//
+    fn process_keypress(&mut self) -> Result<(), std::io::Error> {
+        let pressed_key : Key = Terminal::read_key()?;
+
+        self.modes.process_hashmap_key_press(&pressed_key);
+        let editor_mode : (&String, bool) = self.modes.get_editor_mode();
+        let cursor_mode : (&String, bool) = self.modes.get_cursor_mode();
+
+        if editor_mode.1 == true {
+            let mode : &str = editor_mode.0.as_str();
+            match mode {
+                "Edit"  => self.should_edit = true,
+                "Read"  => self.should_edit = false,
+                "Write" => self.save(),
+                "Quit"  => self.quit(),
+                _ => (),
+            }
+            self.move_cursor("Move-Left");  //why are we getting a immutable borrow on cursor mode but not editor mode
+        } else if cursor_mode.1 == true {
+            let mode : &str = cursor_mode.0.as_str();
+            self.move_cursor(mode);
+        } else {
+            if self.should_edit == true {
+                match pressed_key {
+                    Key::Char(c) => {
+                        self.document.insert(&self.cursor_position, c);
+                        self.move_cursor("Move-Right");
+                    }
+                    Key::Backspace => {
+                        if self.cursor_position.y > 0 || self.cursor_position.x > 0 {
+                            self.move_cursor("Move-Right");
+                            self.document.delete(&self.cursor_position);
+                        }
+                    }
+                    Key::Delete => {
+                        if self.cursor_position.x > 0 || self.cursor_position.y >= 0 {
+                            self.document.delete(&self.cursor_position);
+                        }
+                    }
+                    _ => (),
+                }
+            }
+        }
+
+        self.scroll();
+        self.reset_quit();
         return Ok(());
     }
 
@@ -336,7 +364,7 @@ impl Editor {
     // Enter = move to next page
     // Backspace = move to previous page
 
-    fn move_cursor(&mut self, key : Key) {
+    fn move_cursor(&mut self, mode : &str) {
         let Position{ mut x, mut y} = self.cursor_position;
 
         let terminal_height = self.terminal.size().height as usize;
@@ -349,14 +377,14 @@ impl Editor {
             0
         };
         
-        match key {
-            Key::Alt('f') => {
+        match mode {
+            "Move-Forward" => {
                 if y < height {
                     y = y.saturating_add(1);
                 }
             } 
-            Key::Alt('d') => y = y.saturating_sub(1),
-            Key::Alt('k') => {
+            "Move-Down" => y = y.saturating_sub(1),
+            "Move-Right" => {
                 if x < width {
                     x = x + 1;
                 } else if y < height {
@@ -364,7 +392,7 @@ impl Editor {
                     x = 0;
                 }
             }
-            Key::Alt('j') => {
+            "Move-Left" => {
                 if x > 0 {
                     x = x - 1;
                 } else if y > 0 {
@@ -376,28 +404,28 @@ impl Editor {
                     }
                 }
             }
-            Key::Alt('l') => {
+            "Tail-Line" => {
                 x = if x.saturating_add(terminal_width) < width {
                     x + terminal_width as usize
                 } else {
                     width
                 };
             }
-            Key::Alt('h') => {
+            "Head-Line" => {
                 x = if x > terminal_width {
                     x - terminal_width
                 } else {
                     0
                 };
             }
-            Key::Alt('n') => {
+            "Page-Down" => {
                 y = if y.saturating_add(terminal_height) < height {
                     y + terminal_height as usize
                 } else {
                     height
                 };
             }
-            Key::Alt('v') => {
+            "Page-Up" => {
                 y = if y > terminal_height {
                     y - terminal_height
                 } else {
