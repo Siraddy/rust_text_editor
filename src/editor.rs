@@ -171,6 +171,7 @@ impl Editor {
         let mut status          : String;
         let width               : usize = self.terminal.size().width as usize;
         let modified_indicator  : &str = if self.document.is_dirty() == true { "(modified)" } else { "(up to date)" };
+        let mode_indicator      : &str = if self.should_edit == true { "EDITING" } else { "READING" };
         let line_indicator      : String = format!("{}/{}", self.cursor_position.y.saturating_add(1), self.document.len());
         let mut file_name       : String = "[No Name]".to_string();
 
@@ -180,7 +181,7 @@ impl Editor {
             file_name.truncate(20);
         }
 
-        status = format!("{} - {} lines {}", file_name, self.document.len(), modified_indicator);
+        status = format!("{} - {} lines {} {}", file_name, self.document.len(), modified_indicator, mode_indicator);
         let len : usize = status.len() + line_indicator.len();
 
         /*I don't fully get why its structured like this -> why do we need the & for the push string method */
@@ -320,11 +321,18 @@ impl Editor {
                 _ => (),
             }
         } else if cursor_mode.1 == true {
-            self.reset_quit();
-            let mode : &str = cursor_mode.0.as_str();
+            let mode : &str = &cursor_mode.0.as_str();
             self.move_cursor(mode);
+            // if mode != "Backspace" {
+            //     self.move_cursor(mode);
+            // } else {
+            //     self.move_cursor("Move-Left");
+            // }
+            
+            // if mode == "Backspace" || mode == "Delete" {
+            //     self.document.delete(&self.cursor_position);
+            // }
         } else {
-            self.reset_quit();
             if self.should_edit == true {
                 match pressed_key {
                     Key::Char(c) => {
@@ -338,13 +346,15 @@ impl Editor {
                         }
                     }
                     Key::Delete => {
-                        if self.cursor_position.x > 0 || self.cursor_position.y >= 0 {
                             self.document.delete(&self.cursor_position);
-                        }
                     }
                     _ => (),
                 }
             }
+        }
+
+        if editor_mode.0.as_str() != "Quit" {
+            self.reset_quit();
         }
 
         self.modes.set_editor_mode(&"".to_string(), false);
