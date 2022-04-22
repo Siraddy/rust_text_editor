@@ -46,6 +46,10 @@ impl Modes {
         initial_key_map.insert(Key::Alt('v'), "Page-Up".to_string());
         initial_key_map.insert(Key::Alt('n'), "Page-Down".to_string());
 
+        /*Inserting Backspace and Delete to the Keymap */
+        // initial_key_map.insert(Key::Backspace, "Backspace".to_string());
+        // initial_key_map.insert(Key::Delete, "Delete".to_string());
+
         return Modes {
             editor_mode     : ("Read".to_string(), false),
             cursor_mode     : ("".to_string(), false),
@@ -112,7 +116,14 @@ impl Modes {
                         return;
                     }
 
-                    "Move-Left" |"Move-Right" | "Head-Line" | "Tail-Line" | "Move-Down" | "Move-Forward" | "Page-Up" | "Page-Down" => {
+                    "Move-Left" 
+                    | "Move-Right" 
+                    | "Head-Line" 
+                    | "Tail-Line" 
+                    | "Move-Down" 
+                    | "Move-Forward" 
+                    | "Page-Up" 
+                    | "Page-Down" => {
                         self.set_cursor_mode(&res, true);
                         self.set_editor_mode(&"None".to_string(), false);
 
