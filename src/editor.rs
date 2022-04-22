@@ -306,10 +306,9 @@ impl Editor {
     //------------------------------------------------------------------------//
     fn process_keypress(&mut self) -> Result<(), std::io::Error> {
         let pressed_key : Key = Terminal::read_key()?;
-
         self.modes.process_hashmap_key_press(&pressed_key);
-        let editor_mode : (&String, bool) = self.modes.get_editor_mode();
-        let cursor_mode : (&String, bool) = self.modes.get_cursor_mode();
+
+        let Modes{editor_mode, cursor_mode, editor_key_maps} = self.modes.clone();
 
         if editor_mode.1 == true {
             let mode : &str = editor_mode.0.as_str();
@@ -320,11 +319,12 @@ impl Editor {
                 "Quit"  => self.quit(),
                 _ => (),
             }
-            self.move_cursor("Move-Left");  //why are we getting a immutable borrow on cursor mode but not editor mode
         } else if cursor_mode.1 == true {
+            self.reset_quit();
             let mode : &str = cursor_mode.0.as_str();
             self.move_cursor(mode);
         } else {
+            self.reset_quit();
             if self.should_edit == true {
                 match pressed_key {
                     Key::Char(c) => {
@@ -333,7 +333,7 @@ impl Editor {
                     }
                     Key::Backspace => {
                         if self.cursor_position.y > 0 || self.cursor_position.x > 0 {
-                            self.move_cursor("Move-Right");
+                            self.move_cursor("Move-Left");
                             self.document.delete(&self.cursor_position);
                         }
                     }
@@ -347,8 +347,10 @@ impl Editor {
             }
         }
 
+        self.modes.set_editor_mode(&"".to_string(), false);
+        self.modes.set_cursor_mode(&"".to_string(), false);
         self.scroll();
-        self.reset_quit();
+        
         return Ok(());
     }
 
