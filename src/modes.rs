@@ -11,10 +11,11 @@ use termion::{event::Key, cursor};
 //0 - read, 1 - edit, 2 - write, 3 - quit
 //
 //cursor mode on the other hand also stores integers
+#[derive(Clone)]
 pub struct Modes {
-    editor_mode     : (String, bool),
-    cursor_mode     : (String, bool),
-    editor_key_maps : HashMap<Key, String>,
+    pub editor_mode     : (String, bool),
+    pub cursor_mode     : (String, bool),
+    pub editor_key_maps : HashMap<Key, String>,
 }
 
 impl Modes {
@@ -72,13 +73,13 @@ impl Modes {
         
     }
 
-    pub fn get_editor_mode(&self) -> (&String, bool) {
+    pub fn get_editor_mode(&mut self) -> (&String, bool) {
         let mode : &String = &self.editor_mode.0;
         let flag : bool = self.editor_mode.1;
         return (mode, flag);
     }
 
-    pub fn get_cursor_mode(&self) -> (&String, bool) {
+    pub fn get_cursor_mode(&mut self) -> (&String, bool) {
         let mode : &String = &self.cursor_mode.0;
         let flag : bool = self.cursor_mode.1;
         return (mode, flag);
